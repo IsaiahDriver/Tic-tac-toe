@@ -1,47 +1,112 @@
-import java.awt.Color;
-import java.awt.Dimension;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.event.*;
 
-import javax.swing.JPanel;
 
-public class GamePanel extends JPanel implements Runnable
+public class GamePanel
+      implements MouseListener
 {
-   //SCREEN SETTINGS
-   final int originalTileSize = 16; //16*16 tile
-   final int scale = 3;
+   private JPanel panel;
+   public static enum PanelState { NEUTRAL, X, O };
+   private PanelState state = PanelState.NEUTRAL;
+   private int panelSize;
+   private int markRadius = 40;
    
-   final int tileSize = originalTileSize * scale; //48*48 tile
-   final int maxScreenCol = 16;
-   final int maxScreenRow = 12;
-   final int screenWidth = tileSize * maxScreenCol; //total pixels per column
-   final int screenHeight = tileSize * maxScreenRow; //total pixels per row   
+   public final int xPos;
+   public final int yPos;
    
-   Thread gameThread;
-
-   public GamePanel()
-   {
-      this.setPreferredSize(new Dimension(screenWidth, screenHeight));
-      this.setBackground(Color.black);
-      this.setDoubleBuffered(true); 
-   }
-   
-   public void startGameThread()
-   {
-      gameThread = new Thread(this);
-      gameThread.start();
-   }
-   
-   
-   
-   @Override
-   public void run()
-   {
-      while(gameThread != null)
-      {
-         System.out.println("here");
+   private static boolean panelsEnabled = true;
+   private boolean isThisPanelEnabled = true;
       
-      
-      }
+   public GamePanel(int yPos, int xPos, int panelSize)
+   {
+      this.yPos = yPos;
+      this.xPos = xPos;
+      this.panelSize = panelSize;
    
-   
+      panel = new JPanel();
+      panel.setPreferredSize(new Dimension(panelSize, panelSize));
+      panel.setBackground(Color.white);
+      panel.addMouseListener(this);
    }
+   
+   public JPanel getPanel()
+   {
+      return panel;
+   }
+   
+   public PanelState getState()
+   {
+      return state;
+   }
+   
+   public static void setAllActive (boolean setting)
+   {
+      panelsEnabled = setting;
+   }
+    
+   public void markWithX()
+   {
+      Graphics g = panel.getGraphics();
+       
+      int panelCentre = panelSize / 2;
+      int lineCompY = (int)Math.round(markRadius * Math.sin(Math.PI / 4));
+      int lineCompX = (int)Math.round(markRadius * Math.cos(Math.PI / 4));
+       
+      g.drawLine(panelCentre, panelCentre, panelCentre + lineCompX, panelCentre 
+           + lineCompY);
+      g.drawLine(panelCentre, panelCentre, panelCentre + lineCompX, panelCentre 
+           - lineCompY);
+      g.drawLine(panelCentre, panelCentre, panelCentre - lineCompX, panelCentre 
+           - lineCompY);
+      g.drawLine(panelCentre, panelCentre, panelCentre - lineCompX, panelCentre 
+           + lineCompY);   
+     state = PanelState.X;
+     isThisPanelEnabled = false;
+   }
+    
+   public void markWithO()
+   {
+      Graphics g = panel.getGraphics();      
+      int panelCentre = panelSize / 2;
+      int diameter = 2 * markRadius;
+       
+      g.drawOval(panelCentre - markRadius, panelCentre - markRadius, diameter, diameter);
+      state = PanelState.O;
+      isThisPanelEnabled = false;
+   }
+   
+   public void clearPanel()
+   {
+      Graphics g = panel.getGraphics();
+      g.setColor(Color.white);
+      g.fillRect(0, 0, panelSize, panelSize);
+      g.setColor(Color.black);
+      
+      state = PanelState.NEUTRAL;
+      isThisPanelEnabled = true;
+   }
+         
+   public void mouseClicked(MouseEvent event) 
+   {
+       if (!panelsEnabled || !isThisPanelEnabled) { return; }   
+       
+       if (Exercise14_5.isPlayerTurn && !Exercise14_5.isDebugMode)
+       {
+          markWithX();
+       }
+       else
+       {
+          markWithO();
+       }
+       
+       Exercise14_5.finishTurn(this);
+   }
+   
+   public void mouseReleased(MouseEvent event) {} 
+   public void mousePressed(MouseEvent event) {}   
+   public void mouseExited(MouseEvent event) {}  
+   public void mouseEntered(MouseEvent event) {}
 }
